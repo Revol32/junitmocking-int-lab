@@ -1,8 +1,8 @@
 package edu.epam.izhevsk.junit;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.verify;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class PaymentControllerTest {
     @Mock
     AccountService accountServiceMock;
@@ -26,13 +26,20 @@ public class PaymentControllerTest {
     @InjectMocks
     PaymentController paymentController;
 
-    @BeforeAll
+    @BeforeEach
     void setup() throws InsufficientFundsException {
         MockitoAnnotations.initMocks(this);
         Mockito.when(accountServiceMock.isUserAuthenticated(100L)).thenReturn(true);
         Mockito.when(accountServiceMock.isUserAuthenticated(not(cmpEq(100L)))).thenReturn(false);
         Mockito.when(depositServiceMock.deposit(lt(100L), anyLong())).thenReturn("OK");
         Mockito.when(depositServiceMock.deposit(geq(100L), anyLong())).thenThrow(new InsufficientFundsException());
+    }
+
+    @Test
+    @DisplayName("Тест задания: check that isUserAuthenticated has been called exactly one time with parameter = 100")
+    void verifyOnceTest() throws InsufficientFundsException {
+        paymentController.deposit(50L, 100L);
+        verify(accountServiceMock).isUserAuthenticated(100L);
     }
 
     @ParameterizedTest
